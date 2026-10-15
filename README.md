@@ -14,12 +14,16 @@ the code is not generalized beyond that stack, and no other stack has been tried
 > [trust model](docs/trust-model.md) before you point anything real at it.
 
 ```mermaid
-flowchart LR
-  A["chat agent<br/>(any MCP client)"] -- "MCP over HTTP<br/>bearer token per agent" --> B["bridge<br/>task engine + check runner"]
-  B -- "sandbox exec" --> W["worker sandbox<br/>no network, policy enforced<br/>omp + LSP + toolchains"]
-  W --- V[("shared workspace<br/>git repos, per-task worktrees")]
-  B -- "evidence + alert" --> A
-  H["human reviewer"] -. "review, then merge by hand" .-> V
+flowchart TB
+  A["chat agent<br/>(any MCP client)<br/>woken by a waiter script when a round ends"]
+  B["bridge<br/>task engine + check runner"]
+  W["worker sandbox<br/>no network, policy enforced<br/>omp + LSP + toolchains"]
+  V[("shared workspace<br/>git repos, per-task worktrees")]
+  H["human reviewer"]
+  A -->|"MCP, token per agent"| B
+  B -->|"sandbox exec"| W
+  W --- V
+  H -.->|"review, then merge by hand"| V
 ```
 
 ## What the bridge does

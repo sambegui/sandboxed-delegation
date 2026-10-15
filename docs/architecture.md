@@ -4,23 +4,17 @@ Evidence labels used in these docs: **OBSERVED** means seen on the live system t
 a script or test in this repo; **INFERRED** is reasoning; **UNVERIFIED** has not been exercised.
 
 ```mermaid
-flowchart LR
-  subgraph cells["agent sandboxes"]
-    A["agent<br/>skill: omp-bridge<br/>workspace mounted read-only"]
-  end
-  subgraph host["host"]
-    B["bridge service<br/>127.0.0.1 only<br/>sqlite state"]
-    W[("workspace volume")]
-  end
-  subgraph worker["worker sandbox"]
-    S["omp + LSP + toolchains<br/>no network"]
-  end
-  A -- "MCP, bearer token" --> B
-  B -- "sandbox exec" --> S
+flowchart TB
+  A["agent in its own sandbox<br/>skill: omp-bridge<br/>woken by a waiter script when a round ends"]
+  B["bridge service on the host<br/>127.0.0.1 only, sqlite state"]
+  S["worker sandbox<br/>omp + LSP + toolchains, no network"]
+  W[("workspace volume")]
+  H["human reviewer<br/>(read-only mount)"]
+  A -->|"MCP, bearer token"| B
+  B -->|"sandbox exec"| S
   S --- W
-  A -. "read-only view" .-> W
-  B -- "waiter script wakes the agent" --> A
-  H["human reviewer"] -. "read-only mount, then merge by hand" .-> W
+  A -.->|"read-only"| W
+  H -.->|"merge by hand"| W
 ```
 
 ## Parts
