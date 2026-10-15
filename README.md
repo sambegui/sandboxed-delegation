@@ -69,7 +69,7 @@ Observed on one live setup (2026-10), with identifiers removed:
 - The worker's own log showed LSP calls (rust-analyzer diagnostics and hover) answering during that task.
 - Models behind the allowlist included a self-hosted endpoint and a hosted provider; when the hosted provider's quota ran out, the
   provider's own error text reached the agent.
-- The unit suite (88 tests) passes offline.
+- The unit suite (90 tests) passes offline.
 
 **Not measured:** any comparison with SSH-plus-a-harness or with any other approach; output quality across many tasks or models; cost
 and latency; behavior under concurrent load; long-running reliability; anything on a stack other than the one named above.
