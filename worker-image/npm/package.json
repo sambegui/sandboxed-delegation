@@ -1,0 +1,19 @@
+{
+  "name": "omp-worker-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Language servers, compilers and package managers baked into the worker image; the lock file pins every package by integrity hash.",
+  "dependencies": {
+    "@types/node": "24.19.2",
+    "eslint": "10.12.0",
+    "prettier": "3.9.10",
+    "pyright": "1.1.414",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.2",
+    "typescript-language-server": "6.0.2",
+    "vitest": "5.0.4",
+    "yarn": "1.22.22",
+    "pnpm": "12.11.2"
+  }
+}

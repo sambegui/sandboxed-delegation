@@ -1,0 +1,33 @@
+# Example provider profile for the worker: one inference endpoint, reachable only by the omp executable (and processes it spawns).
+# Replace the host, port and credential names with your own. The real token stays on the host side; the sandbox holds only a placeholder.
+id: local-inference-omp
+display_name: Self-hosted inference for omp workers
+description: "An OpenAI-compatible endpoint through a host-side relay. Access is bound to the omp executable and, by the policy's ancestor rule, its descendants."
+category: inference
+inference_capable: true
+
+credentials:
+  - name: relay_token
+    description: Relay client bearer token (revocable)
+    env_vars:
+      - LOCAL_RELAY_CLIENT_TOKEN
+    required: true
+    auth_style: bearer
+    header_name: authorization
+
+# One request shape: allow only what omp actually sends (observed: POST /v1/chat/completions, no model-list call). `access: read-write`
+# would also allow every other POST and PUT the relay might ever serve.
+endpoints:
+  - host: host.openshell.internal
+    port: 8770
+    protocol: rest
+    enforcement: enforce
+    rules:
+      - allow:
+          method: POST
+          path: /v1/chat/completions
+
+# Policy also authorizes executable ancestors, so processes omp spawns can use this access (observed: curl run by omp's bash tool
+# reached the relay). A process started outside omp's ancestry is refused at connect.
+binaries:
+  - /usr/local/bin/omp

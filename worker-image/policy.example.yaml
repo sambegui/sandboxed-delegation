@@ -1,0 +1,19 @@
+# Example sandbox policy for the worker (OpenShell policy format, version 1). Pass it with --policy at sandbox create time.
+# Network access is NOT listed here: the provider profile you attach (provider-profile.example.yaml) contributes the single allowed
+# endpoint, bound to the omp executable and its descendants. Everything else stays denied.
+version: 1
+
+filesystem_policy:
+  include_workdir: true
+  read_only:
+    [/usr, /lib, /lib64, /bin, /sbin, /etc, /opt, /proc, /dev/urandom, /var/log]
+  read_write: [/tmp, /sandbox, /dev/null]
+
+# hard_requirement: if the filesystem policy cannot be applied the sandbox must fail to start. best_effort (the default) may skip it
+# and only logs a High-severity finding. A mandatory Landlock baseline (ABI 3, Linux 6.2 or newer) applies in both modes.
+landlock:
+  compatibility: hard_requirement
+
+process:
+  run_as_user: "1000"
+  run_as_group: "1000"

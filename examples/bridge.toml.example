@@ -1,0 +1,88 @@
+# sandboxed-delegation bridge configuration. Install at /etc/omp-bridge/bridge.toml (any path works).
+# Secrets never appear here: api_key_env names the env var the sandbox runtime's provider injects INSIDE the worker sandbox, and agent
+# tokens live as sha256 digests in the tokens file.
+
+[bridge]
+listen_host = "127.0.0.1"            # agent cells reach it through the host alias your sandbox runtime provides
+listen_port = 18780
+state_dir = "/var/lib/omp-bridge"    # sqlite + local round files
+tokens_file = "/etc/omp-bridge/tokens"   # lines "<agent> sha256=<hex>"; the agents are exactly those under [identities.forgejo]
+default_base_branch = "main"
+
+[openshell]
+binary = "/usr/local/bin/openshell"  # the sandbox CLI the bridge drives (OpenShell v0.1.2 was used)
+gateway = "your-worker-gateway"      # the gateway that owns the worker sandbox
+sandbox = "omp-worker"               # the persistent worker sandbox
+
+[workspace]
+host = "/srv/workspace"              # on the host; inside the worker and the agent cells it is /sandbox/workspace
+# agents_file: the shared workspace rules (see examples/workspace-AGENTS.md). omp loads AGENTS.md only from its working directory and
+# every task runs in its own worktree (a separate git root), so the bridge passes this file to EVERY round with --append-system-prompt.
+# Default shown; "" disables; a missing file is harmless.
+agents_file = "/sandbox/workspace/AGENTS.md"
+
+# Git identity of worker commits. The BRIDGE decides it per task and stamps GIT_AUTHOR_* / GIT_COMMITTER_* into the worker's
+# environment; it then verifies every commit of the task (a built-in "git identity" check), because an explicit --author can still
+# override the environment. Which identity: a [projects.<name>] pin wins; otherwise the project's `origin` host (inferred once and
+# remembered; a later change is refused until the project is pinned); no remote or an unknown host means forgejo.
+#   forgejo -> the delegating agent's own identity (author = committer)
+#   github  -> one public front identity for every agent
+# The agents are the tables under [identities.forgejo]; every one needs a token in the tokens file, and vice versa.
+[identities]
+forgejo_hosts = ["git.example.com"]
+github_hosts = ["github.com"]
+
+[identities.forgejo.alpha]
+name = "Alpha"
+email = "alpha@noreply.git.example.com"
+[identities.forgejo.bravo]
+name = "Bravo"
+email = "bravo@noreply.git.example.com"
+
+[identities.github]
+name = "Public Front"
+email = "12345678+front-account@users.noreply.github.com"
+
+# Optional pins, e.g. a Forgejo copy of a GitHub repo that you submit upstream by hand:
+# [projects.some-upstream-copy]
+# identity = "github"
+
+# The model allowlist. Agents can name ONLY these aliases; the bridge renders one models.yml from every enabled alias and uploads it to the
+# worker. `model` is the exact omp --model selector; `provider` is the models.yml provider id.
+[models]
+default = "local"
+
+# A self-hosted OpenAI-compatible endpoint reachable from the sandbox through a provider you attach.
+[models.local]
+model = "local/model-small"
+provider = "local"
+base_url = "http://host.openshell.internal:8770/v1"
+api = "openai-completions"
+api_key_env = "LOCAL_RELAY_CLIENT_TOKEN"   # NAME only; the provider injects the value in-sandbox
+description = "Self-hosted OpenAI-compatible endpoint"
+enabled = true
+
+# A hosted provider, disabled until you attach its provider and enable it.
+[models.hosted]
+model = "hosted/hosted-model"
+provider = "hosted"
+base_url = "https://api.provider.example/v1"
+api = "openai-completions"
+api_key_env = "HOSTED_API_KEY"
+description = "Hosted model (example)"
+enabled = false
+
+[limits]
+# max_rounds = 6
+# round_max_time_s = 2700            # passed to omp as --max-time, enforced with a kill timer
+# total_wall_s = 14400
+# max_active_tasks = 2               # across all agents; also the worker cpu/memory budget driver
+# spec_max_bytes = 65536
+# max_checks = 20
+# wait_timeout_cap_s = 3300
+# check_timeout_s = 300
+# exec_grace_s = 30
+# request_max_bytes = 1048576
+
+# [cleanup]
+# remove_merged_worktrees = false    # opt-in; leave off if you squash-merge (a squash never makes the branch an ancestor of main)

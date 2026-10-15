@@ -1,0 +1,31 @@
+# Example systemd unit for the bridge. Adapt user, paths and the unit your sandbox runtime's gateway runs under.
+# The bridge must run as the same user that owns the sandbox gateway (it drives the sandbox CLI), and it binds loopback only.
+[Unit]
+Description=omp-bridge: agents delegate coding rounds to a persistent sandboxed worker over MCP
+After=network-online.target
+Wants=network-online.target
+# Also order after / require the unit that runs your sandbox gateway, e.g. Requires=your-gateway.service
+
+[Service]
+Type=simple
+User=bridge
+Group=bridge
+WorkingDirectory=/opt/omp-bridge
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 -m bridge /etc/omp-bridge/bridge.toml
+# Exit 2 (bad configuration), 3 (preflight failed) and 64 (bad usage) will not fix themselves: do not restart into them.
+Restart=on-failure
+RestartSec=30
+RestartPreventExitStatus=2 3 64
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/omp-bridge
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=yes
+
+[Install]
+WantedBy=multi-user.target
